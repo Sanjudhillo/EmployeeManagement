@@ -3,49 +3,92 @@ import Login from './components/Auth/Login'
 import EmployeeDashboard from './components/Dashboard/EmployeeDashboard'
 import AdminDashboard from './components/Dashboard/AdminDashboard'
 import { AuthContext } from './context/AuthProvider'
+import './App.css'
 
 const App = () => {
-
   const [user, setUser] = useState(null)
   const [loggedInUserData, setLoggedInUserData] = useState(null)
-  const [userData,SetUserData] = useContext(AuthContext)
+  const [userData] = useContext(AuthContext)
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(()=>{
-    const loggedInUser = localStorage.getItem('loggedInUser')
-    
-    if(loggedInUser){
-      const userData = JSON.parse(loggedInUser)
-      setUser(userData.role)
-      setLoggedInUserData(userData.data)
+  useEffect(() => {
+    try {
+      const loggedInUser = localStorage.getItem('loggedInUser')
+      if (loggedInUser) {
+        const parsedUser = JSON.parse(loggedInUser)
+        setUser(parsedUser.role)
+        setLoggedInUserData(parsedUser.data)
+      }
+    } catch (err) {
+      console.error('Error loading user data:', err)
+      localStorage.removeItem('loggedInUser')
+    } finally {
+      setIsLoading(false)
     }
+  }, [])
 
-  },[])
+  const handleLogin = async (email, password) => {
+    setError('')
+    try {
+      // Admin login
+      if (email === 'admin@me.com' && password === '123') {
+        const adminUser = userData.find(u => u.role === 'admin')
+        setUser('admin')
+        setLoggedInUserData(adminUser)
+        localStorage.setItem('loggedInUser', JSON.stringify({ 
+          role: 'admin', 
+          data: adminUser 
+        }))
+        return
+      }
 
+      // Employee login
+      const employee = userData.find(
+        (e) => e.email === email && e.password === password && e.role === 'employee'
+      )
 
-  const handleLogin = (email, password) => {
-    if (email == 'admin@me.com' && password == '123') {
-      setUser('admin')
-      localStorage.setItem('loggedInUser', JSON.stringify({ role: 'admin' }))
-    } else if (userData) {
-      const employee = userData.find((e) => email == e.email && e.password == password)
       if (employee) {
         setUser('employee')
         setLoggedInUserData(employee)
-        localStorage.setItem('loggedInUser', JSON.stringify({ role: 'employee',data:employee }))
+        localStorage.setItem('loggedInUser', JSON.stringify({
+          role: 'employee',
+          data: employee
+        }))
+      } else {
+        throw new Error('Invalid credentials')
       }
-    }
-    else {
-      alert("Invalid Credentials")
+    } catch (err) {
+      console.error('Login error:', err)
+      setError('Invalid email or password')
+      throw err
     }
   }
 
+  const handleLogout = () => {
+    setUser(null)
+    setLoggedInUserData(null)
+    localStorage.removeItem('loggedInUser')
+  }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="loading-spinner"></div>
+      </div>
+    )
+  }
 
   return (
-    <>
-      {!user ? <Login handleLogin={handleLogin} /> : ''}
-      {user == 'admin' ? <AdminDashboard changeUser={setUser} /> : (user == 'employee' ? <EmployeeDashboard changeUser={setUser} data={loggedInUserData} /> : null) }
-    </>
+    <div className="min-h-screen bg-gray-900">
+      {!user ? (
+        <Login handleLogin={handleLogin} error={error} />
+      ) : user === 'admin' ? (
+        <AdminDashboard handleLogout={handleLogout} />
+      ) : (
+        <EmployeeDashboard handleLogout={handleLogout} data={loggedInUserData} />
+      )}
+    </div>
   )
 }
 
