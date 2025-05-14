@@ -1,7 +1,15 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "chmod +x vercel-build.sh && npm run vercel-build",
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "vite"
+  "framework": "vite",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
 } 

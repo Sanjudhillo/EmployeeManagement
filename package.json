@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=8.0.0"
+    "node": "18.x",
+    "npm": "9.x"
   },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "vercel-build": "bash ./vercel-build.sh",
     "postbuild": "echo Build completed successfully",
     "lint": "eslint .",
     "preview": "vite preview"
